@@ -8,7 +8,6 @@
 import os
 import warnings
 
-import oauthlib.common as oauthlib_commmon
 import six
 from flask import abort, request
 from flask_login import current_user
@@ -36,22 +35,15 @@ class _OAuth2ServerState(object):
         # Initialize OAuth2 provider
         oauth2.init_app(app)
 
-        # Flask-OAuthlib does not support CACHE_REDIS_URL
-        if app.config["OAUTH2_CACHE_TYPE"] == "redis" and app.config.get(
-            "CACHE_REDIS_URL"
-        ):
-            from redis import from_url as redis_from_url
-
-            app.config.setdefault(
-                "OAUTH2_CACHE_REDIS_HOST", redis_from_url(app.config["CACHE_REDIS_URL"])
-            )
-
-        # Configures an OAuth2Provider instance to use configured caching
-        # system to get and set the grant token.
+        # Configures an OAuth2Provider instance to use the application-level
+        # Invenio-Cache backend to get and set authorization-code grants.
         bind_cache_grant(app, oauth2, lambda: OAuthUserProxy(current_user))
 
-        # Disables oauthlib's secure transport detection in in debug mode.
+        # Disable secure transport detection in debug/testing mode. Keep both
+        # variables while the compatibility shell is being migrated so old
+        # OAuthlib-backed paths in tests/custom code do not fail early.
         if app.debug or app.testing:
+            os.environ["AUTHLIB_INSECURE_TRANSPORT"] = "1"
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
         if entry_point_group:
@@ -199,18 +191,8 @@ def extract_params():
 
 
 def verify_request(scopes):
-    """Verify request.
-
-    copy pasted code from flask-oauthlib-invenio
-    """
-    uri, http_method, body, headers = extract_params()
-    try:
-        # compatibility to oauthlib
-        headers["Authorization"] = str(headers["Authorization"])
-    except KeyError:
-        pass
-
-    return oauth2.server.verify_request(uri, http_method, body, headers, scopes)
+    """Verify request."""
+    return oauth2.verify_request(scopes)
 
 
 def verify_oauth_token_and_set_current_user():
@@ -320,17 +302,12 @@ class InvenioOAuth2ServerREST(object):
             variable, so that usage of any special characters is a conscious
             decision of the package user.
         """
-        modified_chars = set(chars)
-        always_safe = set(oauthlib_commmon.always_safe)
-        original_special_chars = oauthlib_commmon.urlencoded - always_safe
-        if modified_chars != original_special_chars:
-            warnings.warn(
-                'You are overriding the default OAuthlib "URL encoded" set of '
-                "valid characters. Make sure that the characters defined in "
-                "oauthlib.common.urlencoded are indeed limitting your needs.",
-                RuntimeWarning,
-            )
-            oauthlib_commmon.urlencoded = always_safe | modified_chars
+        warnings.warn(
+            "OAUTH2SERVER_ALLOWED_URLENCODE_CHARACTERS is ignored by the "
+            "Authlib-backed OAuth2 provider; Authlib uses Flask/Werkzeug "
+            "request parsing instead of OAuthlib's global urlencode set.",
+            RuntimeWarning,
+        )
 
 
 def finalize_app(app):

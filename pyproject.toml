@@ -8,7 +8,7 @@
 name = "invenio-oauth2server"
 description = "Invenio module that implements OAuth 2 server."
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 authors = [
   { name = "CERN", email = "info@inveniosoftware.org" },
@@ -22,7 +22,7 @@ classifiers = [
   "Development Status :: 5 - Production/Stable",
 ]
 dependencies = [
-  "cachelib>=0.1",
+  "Authlib>=1.8.0,<2.0.0",
   "flask-oauthlib-invenio>=2.0.0,<3.0.0",
   "flask-wtf>=0.14.3",
   "future>=0.16.0",
@@ -32,7 +32,6 @@ dependencies = [
   "invenio-i18n>=4.0.0,<5.0.0",
   "invenio-theme>=5.0.0,<6.0.0",
   "pyjwt>=1.5.0",
-  "requests-oauthlib>=1.1.0",
   "wtforms>=3.0.0",
   "wtforms-alchemy>=0.15.0",
 ]
