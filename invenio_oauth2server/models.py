@@ -5,7 +5,7 @@
 """OAuth2Server models."""
 
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 
 import six
 from flask import current_app
@@ -129,7 +129,7 @@ class Client(db.Model):
         info=dict(
             label=_("Description"),
             description=_(
-                "Optional. Description of the application" " (displayed to users)."
+                "Optional. Description of the application (displayed to users)."
             ),
         ),
     )
@@ -450,11 +450,19 @@ class Token(db.Model):
         """Return seconds until expiration, or zero for non-expiring tokens."""
         if self.expires is None:
             return 0
-        return max(0, int((self.expires - datetime.utcnow()).total_seconds()))
+        expires = self.expires
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        return max(0, int((expires - datetime.now(timezone.utc)).total_seconds()))
 
     def is_expired(self):
         """Return whether this token is expired."""
-        return self.expires is not None and datetime.utcnow() > self.expires
+        if self.expires is None:
+            return False
+        expires = self.expires
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) > expires
 
     def is_revoked(self):
         """Return whether this token is revoked.
