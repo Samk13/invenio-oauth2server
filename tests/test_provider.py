@@ -59,7 +59,7 @@ def test_invalid_authorize_requests(provider_fixture):
                 # Valid request authorize request
                 r = client.get(
                     url_for("invenio_oauth2server.authorize"),
-                    data={
+                    query_string={
                         "redirect_uri": redirect_uri,
                         "scope": scope,
                         "response_type": response_type,
@@ -202,6 +202,7 @@ def test_refresh_flow(provider_fixture):
                     client_secret="confidential",
                     grant_type="authorization_code",
                     code=res_data["code"],
+                    redirect_uri=redirect_uri,
                 ),
             )
             assert r.status_code == 200
@@ -505,7 +506,6 @@ def test_auth_flow_denied(provider_fixture):
             # User rejects request
             data["confirm"] = "no"
             data["scope"] = "test:scope"
-            data["state"] = ""
 
             r = client.post(next_url, data=data)
             assert r.status_code == 302
@@ -573,6 +573,14 @@ def test_resource_auth_methods(provider_fixture):
             assert r.status_code == 200
             assert json.loads(r.get_data()) == dict(ping="pong")
 
+            # Malformed and unsupported authorization headers are rejected.
+            for authorization in ("Bearer", "Basic credentials"):
+                r = client.get(
+                    url_for("invenio_oauth2server.ping"),
+                    headers={"Authorization": authorization},
+                )
+                assert r.status_code == 401
+
 
 @pytest.mark.parametrize(
     ("query_string", "valid_qs"),
@@ -597,18 +605,10 @@ def test_oauthlib_urldecoding_issue(api_app_with_test_view, query_string, valid_
         with app.test_client() as client:
             # Remove '/api' since our client is not aware of the the WSGI mount
             test_url = url_for("test").replace("/api", "")
-            # Authlib relies on Flask/Werkzeug request parsing and no longer
-            # rejects some query strings via OAuthlib's global urlencode
-            # character set before the resource view is called. Malformed
-            # query strings that Werkzeug rejects still return 400.
-            expected = (
-                200
-                if valid_qs or query_string in {"$type=search", "q=Joan+D'Arc"}
-                else 400
-            )
-            assert (
-                client.get(test_url, query_string=query_string).status_code == expected
-            )
+            # Authlib relies on Flask/Werkzeug parsing instead of OAuthlib's
+            # global character allow-list. Werkzeug safely percent-encodes the
+            # test client's raw query strings, so all reach the resource view.
+            assert client.get(test_url, query_string=query_string).status_code == 200
 
 
 def test_oauthlib_monkeypatch(api_app_with_test_view):
@@ -775,6 +775,7 @@ def test_expired_refresh_flow(provider_fixture):
                     client_secret="confidential",
                     grant_type="authorization_code",
                     code=res_data["code"],
+                    redirect_uri=data["redirect_uri"],
                 ),
             )
             assert r.status_code == 200
@@ -875,9 +876,9 @@ def test_not_allowed_public_refresh_flow(provider_fixture):
                 url_for("invenio_oauth2server.access_token"),
                 data=dict(
                     client_id="dev",
-                    client_secret="dev",
                     grant_type="authorization_code",
                     code=res_data["code"],
+                    redirect_uri=data["redirect_uri"],
                 ),
             )
             assert r.status_code == 200
@@ -920,7 +921,7 @@ def test_not_allowed_public_refresh_flow(provider_fixture):
                 follow_redirects=True,
             )
             # Only confidential clients can refresh expired token.
-            assert r.status_code == 400
+            assert r.status_code == 401
 
 
 def test_password_grant_type(provider_fixture):
@@ -930,7 +931,6 @@ def test_password_grant_type(provider_fixture):
         with app.test_client() as client:
             data = dict(
                 client_id="dev",
-                client_secret="dev",
                 grant_type="password",
                 username="info@inveniosoftware.org",
                 password="tester",

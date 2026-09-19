@@ -7,6 +7,7 @@
 
 import pytest
 from flask import Flask
+from invenio_cache import InvenioCache
 
 from invenio_oauth2server import InvenioOAuth2Server, InvenioOAuth2ServerREST
 from invenio_oauth2server.ext import verify_oauth_token_and_set_current_user
@@ -22,11 +23,13 @@ def test_version():
 def test_init():
     """Test extension initialization."""
     app = Flask("testapp")
+    InvenioCache(app)
     ext = InvenioOAuth2Server(app)
     assert "invenio-oauth2server" in app.extensions
     assert ext.app is app
 
     app = Flask("testapp")
+    InvenioCache(app)
     ext = InvenioOAuth2Server()
     assert "invenio-oauth2server" not in app.extensions
     state = ext.init_app(app)
