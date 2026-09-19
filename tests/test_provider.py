@@ -611,21 +611,6 @@ def test_oauthlib_urldecoding_issue(api_app_with_test_view, query_string, valid_
             assert client.get(test_url, query_string=query_string).status_code == 200
 
 
-def test_oauthlib_monkeypatch(api_app_with_test_view):
-    app = api_app_with_test_view
-    InvenioOAuth2ServerREST.monkeypatch_oauthlib_urlencode_chars("$:")
-
-    with app.test_request_context():
-        with app.test_client() as client:
-            # Remove '/api' since our client is not aware of the the WSGI mount
-            test_url = url_for("test").replace("/api", "")
-
-            # Authlib ignores the old OAuthlib global urlencode monkeypatch and
-            # uses Flask/Werkzeug parsing, so both requests reach the view.
-            assert client.get(test_url, query_string="$type:search").status_code == 200
-            assert client.get(test_url, query_string="q=RegularArg").status_code == 200
-
-
 def test_settings_index(provider_fixture):
     app = provider_fixture
     with app.test_request_context():

@@ -5,7 +5,6 @@
 
 """Module tests."""
 
-import pytest
 from flask import Flask
 from invenio_cache import InvenioCache
 
@@ -49,14 +48,4 @@ def test_init_rest():
         None, []
     )
     ext.init_app(app)
-    assert verify_oauth_token_and_set_current_user in app.before_request_funcs[None]
-
-
-def test_init_rest_with_oauthlib_monkeypatch():
-    """Test REST legacy OAuthlib monkeypatch config is ignored."""
-    app = Flask("testapp")
-    app.config["OAUTH2SERVER_ALLOWED_URLENCODE_CHARACTERS"] = "^"
-
-    with pytest.warns(RuntimeWarning):
-        InvenioOAuth2ServerREST(app)
     assert verify_oauth_token_and_set_current_user in app.before_request_funcs[None]

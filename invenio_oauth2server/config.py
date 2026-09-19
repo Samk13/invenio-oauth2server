@@ -45,16 +45,6 @@ The allowed values are ``code`` and ``token``.
 - ``token`` is used for implicit grant types
 """
 
-OAUTH2SERVER_ALLOWED_URLENCODE_CHARACTERS = "=&;:%+~,*@!()/?"
-"""A string of special characters that should be valid inside a query string.
-
-.. seealso::
-
-    See :py:func:`monkeypatch_oauthlib_urlencode_chars
-    <invenio_oauth2server.ext.InvenioOAuth2ServerREST.monkeypatch_oauthlib_urlencode_chars>`
-    for a full explanation.
-"""
-
 OAUTH2SERVER_JWT_AUTH_HEADER = "Authorization"
 """Header for the JWT.
 
