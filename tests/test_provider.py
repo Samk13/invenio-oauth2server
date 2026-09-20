@@ -12,9 +12,7 @@ from helpers import login, parse_redirect
 from invenio_accounts.models import User
 from invenio_db import db
 
-from invenio_oauth2server.ext import InvenioOAuth2ServerREST
 from invenio_oauth2server.models import Client, Token
-from invenio_oauth2server.provider import revoke_token
 
 
 def test_token_revocation_uses_database_session(provider_fixture):
@@ -24,7 +22,7 @@ def test_token_revocation_uses_database_session(provider_fixture):
         token = Token.query.first()
         token_id = token.id
 
-        revoke_token(token, None)
+        token.delete()
 
         assert db.session.get(Token, token_id) is None
 

@@ -472,6 +472,11 @@ class Token(db.Model):
         """
         return False
 
+    def delete(self):
+        """Delete this token when it is revoked."""
+        db.session.delete(self)
+        db.session.commit()
+
     def get_user(self):
         """Return token user for Authlib."""
         return self.user
