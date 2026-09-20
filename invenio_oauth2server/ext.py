@@ -5,8 +5,6 @@
 
 """Invenio module that implements OAuth 2 server."""
 
-import os
-
 import six
 from flask import abort, request
 from flask_login import current_user
@@ -37,13 +35,6 @@ class _OAuth2ServerState(object):
         # Configures an OAuth2Provider instance to use the application-level
         # Invenio-Cache backend to get and set authorization-code grants.
         bind_cache_grant(app, oauth2, lambda: OAuthUserProxy(current_user))
-
-        # Disable secure transport detection in debug/testing mode. Keep both
-        # variables while the compatibility shell is being migrated so old
-        # OAuthlib-backed paths in tests/custom code do not fail early.
-        if app.debug or app.testing:
-            os.environ["AUTHLIB_INSECURE_TRANSPORT"] = "1"
-            os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
         if entry_point_group:
             self.load_entry_point_group(entry_point_group)

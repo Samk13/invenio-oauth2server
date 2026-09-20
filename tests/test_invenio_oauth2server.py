@@ -22,8 +22,8 @@ def test_version():
 def test_init():
     """Test extension initialization."""
     app = Flask("testapp")
-    InvenioCache(app)
     ext = InvenioOAuth2Server(app)
+    InvenioCache(app)
     assert "invenio-oauth2server" in app.extensions
     assert ext.app is app
 

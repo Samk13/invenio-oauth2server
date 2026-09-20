@@ -14,6 +14,19 @@ from invenio_db import db
 
 from invenio_oauth2server.ext import InvenioOAuth2ServerREST
 from invenio_oauth2server.models import Client, Token
+from invenio_oauth2server.provider import revoke_token
+
+
+def test_token_revocation_uses_database_session(provider_fixture):
+    """Test RFC token revocation removes the persisted token."""
+    app = provider_fixture
+    with app.app_context():
+        token = Token.query.first()
+        token_id = token.id
+
+        revoke_token(token, None)
+
+        assert db.session.get(Token, token_id) is None
 
 
 def test_client_salt(provider_fixture):

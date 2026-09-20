@@ -83,6 +83,13 @@ def get_client(client_id):
         return client
 
 
+@oauth2.tokenrevoker
+def revoke_token(token, request, *args, **kwargs):
+    """Delete a revoked token using the Invenio database session."""
+    db.session.delete(token)
+    db.session.commit()
+
+
 @oauth2.tokensetter
 def save_token(token, request, *args, **kwargs):
     """Token persistence.
